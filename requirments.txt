@@ -2,3 +2,5 @@ python-telegram-bot
 pandas
 ta
 requests
+fastapi
+uvicorn
