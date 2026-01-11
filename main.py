@@ -2,11 +2,10 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from users import set_user, get_user, toggle_alert
 from engine import analyze
-import scheduler
-import threading
 from config import TOKEN
+import os
 
-# ----- BOT COMMANDS -----
+# ----------------- BOT COMMANDS -----------------
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -50,7 +49,8 @@ async def alerts_off(update: Update, context: ContextTypes.DEFAULT_TYPE):
     toggle_alert(update.effective_chat.id, False)
     await update.message.reply_text("🔕 Alerts OFF")
 
-# ----- BOT SETUP -----
+# ----------------- BOT SETUP -----------------
+
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("setup", setup))
@@ -58,7 +58,20 @@ app.add_handler(CommandHandler("signal", signal))
 app.add_handler(CommandHandler("alerts_on", alerts_on))
 app.add_handler(CommandHandler("alerts_off", alerts_off))
 
-# Start auto alerts in separate thread
-threading.Thread(target=scheduler.start, args=(app,), daemon=True).start()
+# ----------------- WEBHOOK SETUP -----------------
 
-app.run_polling()
+# Replit provides a public URL
+REPL_URL = os.environ.get("https://marketaibot--AnthonylMwebaza.replit.app")  # e.g., https://your-repl-name.username.repl.co
+PORT = int(os.environ.get("PORT", 3000))  # Replit sets PORT automatically
+
+if REPL_URL:
+    WEBHOOK_URL = f"{REPL_URL}/{TOKEN}"
+    print(f"Setting webhook to {WEBHOOK_URL}")
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        webhook_url=WEBHOOK_URL
+    )
+else:
+    print("REPL_URL not set. Running with polling (testing only).")
+    app.run_polling()
